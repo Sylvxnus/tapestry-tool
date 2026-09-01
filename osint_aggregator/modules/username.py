@@ -2,21 +2,14 @@ import asyncio
 import httpx
 from ..schema import Report
 
-# "status": non-2xx = not found (cleanest, should be the most reliable im hoping)
-# "message": site always returns 200, but shows a giveaway string when the profile doesn't exist
 SITES = [
-    {"name": "GitHub",     "url": "https://github.com/{}",                      "method": "status"},
-    {"name": "GitLab",     "url": "https://gitlab.com/{}",                       "method": "status"},
-    {"name": "Reddit",     "url": "https://www.reddit.com/user/{}/about.json",   "method": "status"},
-    {"name": "PyPI",       "url": "https://pypi.org/user/{}/",                   "method": "status"},
+    {"name": "GitHub",     "url": "https://github.com/{}",                       "method": "status"},
     {"name": "Docker Hub", "url": "https://hub.docker.com/v2/users/{}/",         "method": "status"},
     {"name": "dev.to",     "url": "https://dev.to/api/users/by_username?url={}", "method": "status"},
-    {"name": "CodePen",    "url": "https://codepen.io/{}",                       "method": "status"},
-    {"name": "HackerNews", "url": "https://news.ycombinator.com/user?id={}",     "method": "message", "not_found": "No such user"},
-    {"name": "Steam",      "url": "https://steamcommunity.com/id/{}",            "method": "message", "not_found": "The specified profile could not be found"},
+    {"name": "Steam",      "url": "https://steamcommunity.com/id/{}",            "method": "message", "not_found": "The specified profile could not be found."},
 ]
 
-CONCURRENCY = 5   # keep this low, otherwise we are hammering peoples sites
+CONCURRENCY = 5
 TIMEOUT = 8.0
 
 async def check_site(client, sem, site, username, report):
@@ -24,13 +17,14 @@ async def check_site(client, sem, site, username, report):
     async with sem:
         try:
             resp = await client.get(url, timeout=TIMEOUT, follow_redirects=True)
-        except httpx.RequestError:
-            return  # unreachable/timed out — skip rather than false positive
+        except httpx.RequestError as e:
+            print(f"[username] {site['name']} skipped: {e}")
+            return
 
     if site["method"] == "status":
         exists = resp.status_code < 400
-    else:
-        exists = site["not_found"].lower() not in resp.text.lower()
+    else:  # "message" only trust this on a clean 200, not an error
+        exists = resp.status_code == 200 and site["not_found"].lower() not in resp.text.lower()
 
     if exists:
         report.add("username", username, "platform", site["name"], confidence=0.8)

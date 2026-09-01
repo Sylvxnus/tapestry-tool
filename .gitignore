@@ -4,3 +4,5 @@ __pycache__/
 report.json
 report.md
 report.html
+
+debug_sites.py
