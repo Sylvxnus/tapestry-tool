@@ -3,6 +3,7 @@ from dataclasses import asdict
 import click
 from .schema import Report
 from .modules import username as username_module
+from .modules import domain as domain_module
 
 @click.command()
 @click.option("--username", default=None)
@@ -14,8 +15,9 @@ def recon(username, domain, email, out):
 
     if username:
         username_module.run(username, report)
+    if domain:
+        domain_module.run(domain, report)
     # The next lines are for later when i implement the domain and email chaining logic
-    # if domain -> modules.domain.run(domain, report)
     # if email -> modules.breach.run(email, report)
 
     with open(out, "w") as f:
