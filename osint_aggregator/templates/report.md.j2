@@ -1,0 +1,18 @@
+# OSINT Aggregator REPORT
+Generated {{ generated_at }}
+
+{% if username %}**Username:** {{ username }}{% endif %}
+{% if domain %}**Domain:** {{ domain }}{% endif %}
+{% if email %}**Email:** {{ email }}{% endif %}
+
+{% for source in ["correlation", "username", "domain", "breach"] %}
+{% set source_findings = findings | selectattr("source", "equalto", source) | list %}
+{% if source_findings %}
+## {{ source | capitalize }} findings
+
+{% for f in source_findings %}
+- **{{ f.field }}**: {{ f.value }} (confidence: {{ f.confidence }})
+{% endfor %}
+
+{% endif %}
+{% endfor %}
