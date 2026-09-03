@@ -1,3 +1,7 @@
+"""Domain/infra recon: WHOIS, DNS records, crt.sh subdomain enumeration, and
+passive header fingerprinting. Everything here is a public lookup — no active
+scanning of the target."""
+
 import logging
 import httpx
 import dns.resolver
@@ -7,7 +11,9 @@ from ..config import DOMAIN_TIMEOUT, CRTSH_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
+
 def check_whois(domain, report):
+    """Pull registrar/creation-date/org/email fields from the domain's public WHOIS record."""
     try:
         w = whois.whois(domain)
     except Exception as e:
@@ -24,7 +30,10 @@ def check_whois(domain, report):
         for email in emails:
             report.add("domain", domain, "whois_email", str(email), confidence=0.7)
 
+
 def check_dns(domain, report):
+    """Resolve the standard record types. NXDOMAIN/NoAnswer are normal outcomes,
+    not errors, so they're skipped quietly rather than logged."""
     for rtype in ["A", "AAAA", "MX", "TXT", "NS"]:
         try:
             answers = dns.resolver.resolve(domain, rtype, lifetime=DOMAIN_TIMEOUT)
@@ -35,7 +44,28 @@ def check_dns(domain, report):
         except Exception as e:
             logger.warning("DNS %s lookup failed: %s", rtype, e)
 
+
+def is_valid_subdomain(sub, domain):
+    """True if `sub` is a genuine subdomain (or exact match) of `domain`.
+
+    Guards against two real bugs found while testing: a plain string-suffix check
+    would wrongly match unrelated domains like testexample.com against example.com,
+    and crt.sh certificates sometimes list email addresses / malformed entries in
+    their SAN fields rather than real hostnames.
+    """
+    if not sub:
+        return False
+    if sub != domain and not sub.endswith("." + domain):
+        return False
+    if "@" in sub or " " in sub:
+        return False
+    return True
+
+
 def check_subdomains(domain, report):
+    """Passively enumerate subdomains via crt.sh's Certificate Transparency log
+    search — querying a public log of previously issued certificates, not scanning
+    the target itself."""
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
     try:
         resp = httpx.get(url, timeout=CRTSH_TIMEOUT)
@@ -49,16 +79,15 @@ def check_subdomains(domain, report):
     for entry in entries:
         for sub in entry.get("name_value", "").split("\n"):
             sub = sub.strip().lower()
-            if not sub or sub in seen:
-                continue
-            if sub != domain and not sub.endswith("." + domain):
-                continue
-            if "@" in sub or " " in sub:
+            if sub in seen or not is_valid_subdomain(sub, domain):
                 continue
             seen.add(sub)
             report.add("domain", domain, "subdomain", sub, confidence=0.85)
 
+
 def check_fingerprint(domain, report):
+    """Grab Server/X-Powered-By headers from a single ordinary page request —
+    the same headers your browser receives on any normal visit."""
     headers = {"User-Agent": "Mozilla/5.0 (osint-aggregator; educational use)"}
     for scheme in ("https", "http"):
         try:
@@ -70,6 +99,7 @@ def check_fingerprint(domain, report):
         if powered_by := resp.headers.get("x-powered-by"):
             report.add("domain", domain, "x_powered_by", powered_by, confidence=0.7)
         break
+
 
 def run(domain, report):
     check_whois(domain, report)

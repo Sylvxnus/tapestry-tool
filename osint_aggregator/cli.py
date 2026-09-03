@@ -1,3 +1,5 @@
+"""Click-based entry point: runs whichever modules were asked for, correlates the results, and renders json/md/html output."""
+
 import json
 import logging
 from dataclasses import asdict

@@ -1,3 +1,4 @@
+"""Email breach check via XposedOrNot — free, no API key required."""
 import logging
 import httpx
 from ..schema import Report
