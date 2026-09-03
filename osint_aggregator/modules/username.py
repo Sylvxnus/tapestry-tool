@@ -4,9 +4,10 @@ by a "not found" message string, for sites that always return 200."""
 
 import asyncio
 import logging
+
 import httpx
-from ..schema import Report
-from ..config import USERNAME_SITES, USERNAME_CONCURRENCY, USERNAME_TIMEOUT
+
+from ..config import USERNAME_CONCURRENCY, USERNAME_SITES, USERNAME_TIMEOUT
 
 logger = logging.getLogger(__name__)
 

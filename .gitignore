@@ -6,3 +6,9 @@ report.md
 report.html
 
 debug_sites.py
+
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+stdin_test_*
+targets.txt

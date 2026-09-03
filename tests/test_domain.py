@@ -1,5 +1,6 @@
 from osint_aggregator.modules.domain import is_valid_subdomain
 
+
 def test_exact_domain_match():
     assert is_valid_subdomain("example.com", "example.com")
 

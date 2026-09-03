@@ -1,8 +1,10 @@
 """The shared data model every collector module writes into...
- a flat list of Findings tagged by source, so the report/correlation layers don't need to know each module's internals."""
+ a flat list of Findings tagged by source, 
+ so the report/correlation layers don't need to know each module's internals."""
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+
 
 @dataclass
 class Finding:

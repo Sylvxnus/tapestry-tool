@@ -3,11 +3,12 @@ passive header fingerprinting. Everything here is a public lookup — no active
 scanning of the target."""
 
 import logging
-import httpx
+
 import dns.resolver
+import httpx
 import whois
-from ..schema import Report
-from ..config import DOMAIN_TIMEOUT, CRTSH_TIMEOUT
+
+from ..config import CRTSH_TIMEOUT, DOMAIN_TIMEOUT
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,6 @@
-from osint_aggregator.schema import Report
 from osint_aggregator.correlate import find_correlations
+from osint_aggregator.schema import Report
+
 
 def test_username_email_local_part_match():
     notes = find_correlations(Report(), username="foo", email="foo@example.com")
