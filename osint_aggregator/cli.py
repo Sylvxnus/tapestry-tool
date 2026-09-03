@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import click
 from jinja2 import Environment, FileSystemLoader
 
+from .banner import print_banner
 from .correlate import find_correlations
 from .modules import breach as breach_module
 from .modules import domain as domain_module
@@ -70,6 +71,7 @@ def _sanitize(target):
 @click.option("--type", "stdin_type", type=click.Choice(["username", "domain", "email"]), default=None,
               help="What kind of targets are being piped in via --stdin")
 def recon(username, domain, email, out, output_format, verbose, read_stdin, stdin_type):
+    print_banner()
     logging.basicConfig(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(levelname)s [%(name)s] %(message)s",
