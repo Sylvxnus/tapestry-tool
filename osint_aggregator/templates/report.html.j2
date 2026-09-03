@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>OSINT Aggregator Report</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; color: #222; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; }
+  .finding { padding: 0.2rem 0; }
+  .conf { color: #888; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<h1>OSINT Aggregator Report</h1>
+<p>Generated: {{ generated_at }}</p>
+{% if username %}<p><strong>Username:</strong> {{ username }}</p>{% endif %}
+{% if domain %}<p><strong>Domain:</strong> {{ domain }}</p>{% endif %}
+{% if email %}<p><strong>Email:</strong> {{ email }}</p>{% endif %}
+{% for source in ["correlation", "username", "domain", "breach"] %}
+{% set source_findings = findings | selectattr("source", "equalto", source) | list %}
+{% if source_findings %}
+<h2>{{ source | capitalize }} findings</h2>
+{% for f in source_findings %}
+<div class="finding"><strong>{{ f.field }}</strong>: {{ f.value }} <span class="conf">(confidence: {{ f.confidence }})</span></div>
+{% endfor %}
+{% endif %}
+{% endfor %}
+</body>
+</html>

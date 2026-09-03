@@ -1,3 +1,7 @@
+"""Cross-source correlation: 
+simple substring/equality checks that flag when the same identity likely shows up across username, 
+domain, and breach findings."""
+
 def find_correlations(report, username=None, domain=None, email=None):
     correlations = []
 
@@ -13,7 +17,7 @@ def find_correlations(report, username=None, domain=None, email=None):
         whois_emails = [f.value.lower() for f in report.findings if f.field == "whois_email"]
         if email.lower() in whois_emails:
             correlations.append(
-                f"'{email}' apprears directly in the domains WHOIS registration"
+                f"'{email}' appears directly in the domain's WHOIS registration"
             )
 
     if username:

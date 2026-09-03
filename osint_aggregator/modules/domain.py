@@ -1,24 +1,24 @@
+"""Domain/infra recon: WHOIS, DNS records, crt.sh subdomain enumeration, and
+passive header fingerprinting. Everything here is a public lookup — no active
+scanning of the target."""
+
+import logging
 import httpx
 import dns.resolver
 import whois
 from ..schema import Report
+from ..config import DOMAIN_TIMEOUT, CRTSH_TIMEOUT
 
-
-TIMEOUT = 8.0
+logger = logging.getLogger(__name__)
 
 
 def check_whois(domain, report):
-    # Sends a WHOIS query to the registry and parses the response into an object with attributes
+    """Pull registrar/creation-date/org/email fields from the domain's public WHOIS record."""
     try:
         w = whois.whois(domain)
     except Exception as e:
-        print(f"[domain] whois lookup failed: {e}")
+        logger.warning("whois lookup failed: %s", e)
         return
-
-
-    # Each of these is "if the field gets populated add it to the report at the end"
-    # We need to have the str() wrapping as sometimes fields might come back as Python objects
-    # and report.add expects a string value
     if w.registrar:
         report.add("domain", domain, "registrar", str(w.registrar), confidence=0.9)
     if w.creation_date:
@@ -30,49 +30,68 @@ def check_whois(domain, report):
         for email in emails:
             report.add("domain", domain, "whois_email", str(email), confidence=0.7)
 
+
 def check_dns(domain, report):
+    """Resolve the standard record types. NXDOMAIN/NoAnswer are normal outcomes,
+    not errors, so they're skipped quietly rather than logged."""
     for rtype in ["A", "AAAA", "MX", "TXT", "NS"]:
         try:
-            answers = dns.resolver.resolve(domain, rtype, lifetime=TIMEOUT)
+            answers = dns.resolver.resolve(domain, rtype, lifetime=DOMAIN_TIMEOUT)
             for rdata in answers:
                 report.add("domain", domain, f"dns_{rtype}", str(rdata), confidence=1.0)
         except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
             continue
         except Exception as e:
-            print(f"[domain] DNS {rtype} lookup failed: {e}")
+            logger.warning("DNS %s lookup failed: %s", rtype, e)
+
+
+def is_valid_subdomain(sub, domain):
+    """True if `sub` is a genuine subdomain (or exact match) of `domain`.
+
+    Guards against two real bugs found while testing: a plain string-suffix check
+    would wrongly match unrelated domains like testexample.com against example.com,
+    and crt.sh certificates sometimes list email addresses / malformed entries in
+    their SAN fields rather than real hostnames.
+    """
+    if not sub:
+        return False
+    if sub != domain and not sub.endswith("." + domain):
+        return False
+    if "@" in sub or " " in sub:
+        return False
+    return True
 
 
 def check_subdomains(domain, report):
+    """Passively enumerate subdomains via crt.sh's Certificate Transparency log
+    search — querying a public log of previously issued certificates, not scanning
+    the target itself."""
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
     try:
-        resp = httpx.get(url, timeout=15.0)
+        resp = httpx.get(url, timeout=CRTSH_TIMEOUT)
         resp.raise_for_status()
         entries = resp.json()
-
     except Exception as e:
-        print(f"[domain] crt.sh lookup failed (its a slow and flakey service, sometimes just retry): {e}")
+        logger.warning("crt.sh lookup failed (it's a slow/flaky service, sometimes just retry): %s", e)
         return
 
     seen = set()
     for entry in entries:
         for sub in entry.get("name_value", "").split("\n"):
             sub = sub.strip().lower()
-            if not sub or sub in seen:
-                continue
-            if sub != domain and not sub.endswith("." + domain):
-                continue
-            if "@" in sub or " " in sub:
+            if sub in seen or not is_valid_subdomain(sub, domain):
                 continue
             seen.add(sub)
             report.add("domain", domain, "subdomain", sub, confidence=0.85)
 
 
-
 def check_fingerprint(domain, report):
+    """Grab Server/X-Powered-By headers from a single ordinary page request —
+    the same headers your browser receives on any normal visit."""
     headers = {"User-Agent": "Mozilla/5.0 (osint-aggregator; educational use)"}
     for scheme in ("https", "http"):
         try:
-            resp = httpx.get(f"{scheme}://{domain}", headers=headers, timeout=TIMEOUT, follow_redirects=True)
+            resp = httpx.get(f"{scheme}://{domain}", headers=headers, timeout=DOMAIN_TIMEOUT, follow_redirects=True)
         except httpx.RequestError:
             continue
         if server := resp.headers.get("server"):
@@ -80,6 +99,7 @@ def check_fingerprint(domain, report):
         if powered_by := resp.headers.get("x-powered-by"):
             report.add("domain", domain, "x_powered_by", powered_by, confidence=0.7)
         break
+
 
 def run(domain, report):
     check_whois(domain, report)
