@@ -31,7 +31,7 @@ def check_whois(domain, report):
             report.add("domain", domain, "whois_email", str(email), confidence=0.7)
 
 def check_dns(domain, report):
-    for rtype in ["A", "AAAA", "MX", "TXT," "NS"]:
+    for rtype in ["A", "AAAA", "MX", "TXT", "NS"]:
         try:
             answers = dns.resolver.resolve(domain, rtype, lifetime=TIMEOUT)
             for rdata in answers:
@@ -57,9 +57,14 @@ def check_subdomains(domain, report):
     for entry in entries:
         for sub in entry.get("name_value", "").split("\n"):
             sub = sub.strip().lower()
-            if sub and sub not in seen and sub.endswith(domain):
-                seen.add(sub)
-                report.add("domain", domain, "subdomain", sub, confidence=0.85)
+            if not sub or sub in seen:
+                continue
+            if sub != domain and not sub.endswith("." + domain):
+                continue
+            if "@" in sub or " " in sub:
+                continue
+            seen.add(sub)
+            report.add("domain", domain, "subdomain", sub, confidence=0.85)
 
 
 
