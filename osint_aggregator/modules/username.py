@@ -1,22 +1,17 @@
 import asyncio
+import logging
 import httpx
 from ..schema import Report
+from ..config import USERNAME_SITES, USERNAME_CONCURRENCY, USERNAME_TIMEOUT
 
-SITES = [
-    {"name": "GitHub",     "url": "https://github.com/{}",                       "method": "status"},
-    {"name": "Docker Hub", "url": "https://hub.docker.com/v2/users/{}/",         "method": "status"},
-    {"name": "dev.to",     "url": "https://dev.to/api/users/by_username?url={}", "method": "status"},
-    {"name": "Steam",      "url": "https://steamcommunity.com/id/{}",            "method": "message", "not_found": "The specified profile could not be found."},
-]
 
-CONCURRENCY = 5
-TIMEOUT = 8.0
+logger = logging.getLogger(__name__)
 
 async def check_site(client, sem, site, username, report):
     url = site["url"].format(username)
     async with sem:
         try:
-            resp = await client.get(url, timeout=TIMEOUT, follow_redirects=True)
+            resp = await client.get(url, timeout=USERNAME_TIMEOUT, follow_redirects=True)
         except httpx.RequestError as e:
             print(f"[username] {site['name']} skipped: {e}")
             return
@@ -31,9 +26,9 @@ async def check_site(client, sem, site, username, report):
 
 async def run_async(username, report):
     headers = {"User-Agent": "Mozilla/5.0 (osint-aggregator; educational use)"}
-    sem = asyncio.Semaphore(CONCURRENCY)
+    sem = asyncio.Semaphore(USERNAME_CONCURRENCY)
     async with httpx.AsyncClient(headers=headers) as client:
-        await asyncio.gather(*(check_site(client, sem, s, username, report) for s in SITES))
+        await asyncio.gather(*(check_site(client, sem, s, username, report) for s in USERNAME_SITES))
 
 def run(username, report):
     asyncio.run(run_async(username, report))
