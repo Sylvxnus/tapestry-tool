@@ -17,6 +17,7 @@ from .modules import breach as breach_module
 from .modules import domain as domain_module
 from .modules import username as username_module
 from .schema import Report
+from .banner import print_banner
 
 """Resolve templates relative to this file's location, not the CWD.
 otherwise this breaks the moment it's run from anywhere other than inside the repo
@@ -70,6 +71,7 @@ def _sanitize(target):
 @click.option("--type", "stdin_type", type=click.Choice(["username", "domain", "email"]), default=None,
               help="What kind of targets are being piped in via --stdin")
 def recon(username, domain, email, out, output_format, verbose, read_stdin, stdin_type):
+    print_banner()
     logging.basicConfig(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(levelname)s [%(name)s] %(message)s",
