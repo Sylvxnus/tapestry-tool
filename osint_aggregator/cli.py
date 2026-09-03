@@ -61,16 +61,23 @@ def _sanitize(target):
     return re.sub(r"[^a-zA-Z0-9.-]", "_", target)
 
 @click.command()
-@click.option("--username", default=None)
-@click.option("--domain", default=None)
-@click.option("--email", default=None)
+@click.option("--username", default=None, help="Username to check across platforms")
+@click.option("--domain", default=None, help="Domain to run WHOIS/DNS/subdomain recon against")
+@click.option("--email", default=None, help="Email to check against known data breaches")
 @click.option("--out", default="report", help="Output base filename, without extension")
-@click.option("--output", "output_format", type=click.Choice(["json", "md", "html", "all"]), default="all")
-@click.option("--verbose", is_flag=True, default=False)
+@click.option("--output", "output_format", type=click.Choice(["json", "md", "html", "all"]), default="all",
+              help="Which report format(s) to write")
+@click.option("--verbose", is_flag=True, default=False, help="Show detailed logging (HTTP requests, warnings)")
 @click.option("--stdin", "read_stdin", is_flag=True, default=False, help="Read targets from stdin, one per line")
 @click.option("--type", "stdin_type", type=click.Choice(["username", "domain", "email"]), default=None,
               help="What kind of targets are being piped in via --stdin")
 def recon(username, domain, email, out, output_format, verbose, read_stdin, stdin_type):
+    """Weave OSINT data from multiple public sources into one correlated report.
+
+    Provide any combination of --username, --domain, and --email for a single
+    target, or pipe multiple targets through --stdin with --type set to the
+    kind of target being piped in.
+    """
     print_banner()
     logging.basicConfig(
         level=logging.INFO if verbose else logging.WARNING,
