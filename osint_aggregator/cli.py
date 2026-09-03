@@ -12,12 +12,12 @@ from datetime import datetime, timezone
 import click
 from jinja2 import Environment, FileSystemLoader
 
+from .banner import print_banner
 from .correlate import find_correlations
 from .modules import breach as breach_module
 from .modules import domain as domain_module
 from .modules import username as username_module
 from .schema import Report
-from .banner import print_banner
 
 """Resolve templates relative to this file's location, not the CWD.
 otherwise this breaks the moment it's run from anywhere other than inside the repo
