@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/Sylvxnus/tapestry-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/Sylvxnus/tapestry-tool/actions/workflows/ci.yml)
 
+<img width="848" height="380" alt="Screenshot 2026-09-03 170957" src="https://github.com/user-attachments/assets/1ae8cd2a-b27e-446e-888e-c5722bd6094e" />
+
+
 A custom OSINT aggregator that pulls and correlates data from multiple public sources — usernames, domain/infra records, and known data breaches — into a single, correlated report.
 
 Built as a CTF OSINT practice and portfolio project. Everything it does is a passive, public lookup — no active scanning, no brute forcing, no bypassing authentication. See [Ethical use](#ethical-use) below before running it against anything.
