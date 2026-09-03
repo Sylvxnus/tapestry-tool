@@ -1,7 +1,8 @@
 """Email breach check via XposedOrNot — free, no API key required."""
 import logging
+
 import httpx
-from ..schema import Report
+
 from ..config import BREACH_TIMEOUT
 
 logger = logging.getLogger(__name__)

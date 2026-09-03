@@ -8,5 +8,6 @@ USERNAME_SITES = [
     {"name": "GitHub",     "url": "https://github.com/{}",                       "method": "status"},
     {"name": "Docker Hub", "url": "https://hub.docker.com/v2/users/{}/",         "method": "status"},
     {"name": "dev.to",     "url": "https://dev.to/api/users/by_username?url={}", "method": "status"},
-    {"name": "Steam",      "url": "https://steamcommunity.com/id/{}",            "method": "message", "not_found": "The specified profile could not be found."},
+    {"name": "Steam",      "url": "https://steamcommunity.com/id/{}",            "method": "message", 
+     "not_found": "The specified profile could not be found."},
 ]

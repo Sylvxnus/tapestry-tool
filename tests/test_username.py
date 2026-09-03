@@ -1,5 +1,6 @@
 from osint_aggregator.modules.username import determine_exists
 
+
 def test_status_method_exists():
     assert determine_exists({"method": "status"}, 200, "") is True
 
