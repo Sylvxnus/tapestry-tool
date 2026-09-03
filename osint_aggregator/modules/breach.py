@@ -25,4 +25,4 @@ def run(email, report):
     names = breach_lists[0] if breach_lists else []
 
     for name in names:
-        report.add("breach", email, "breach_name", str(name), cofidence=0.9)
+        report.add("breach", email, "breach_name", str(name), confidence=0.9)
