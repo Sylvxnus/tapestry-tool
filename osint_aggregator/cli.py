@@ -13,6 +13,7 @@ import click
 from jinja2 import Environment, FileSystemLoader
 
 from .banner import print_banner
+from .config import load_sites
 from .correlate import find_correlations
 from .modules import breach as breach_module
 from .modules import domain as domain_module
@@ -25,9 +26,9 @@ For example it would break once it becomes pip-installed"""
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
-def _run_modules(report, username=None, domain=None, email=None):
+def _run_modules(report, username=None, domain=None, email=None, sites=None):
     if username:
-            username_module.run(username, report)
+            username_module.run(username, report, sites=sites)
     if domain:
             domain_module.run(domain, report)
     if email:
@@ -71,7 +72,9 @@ def _sanitize(target):
 @click.option("--stdin", "read_stdin", is_flag=True, default=False, help="Read targets from stdin, one per line")
 @click.option("--type", "stdin_type", type=click.Choice(["username", "domain", "email"]), default=None,
               help="What kind of targets are being piped in via --stdin")
-def recon(username, domain, email, out, output_format, verbose, read_stdin, stdin_type):
+@click.option("--sites-file", "sites_file", type=click.Path(exists=True, dir_okay=False), default=None,
+              help="Path to a custom JSON file of username-check sites (overrides the built-in list)")
+def recon(username, domain, email, out, output_format, verbose, read_stdin, stdin_type, sites_file):
     """Weave OSINT data from multiple public sources into one correlated report.
 
     Provide any combination of --username, --domain, and --email for a single
@@ -83,6 +86,12 @@ def recon(username, domain, email, out, output_format, verbose, read_stdin, stdi
         level=logging.INFO if verbose else logging.WARNING,
         format="%(levelname)s [%(name)s] %(message)s",
     )
+    sites = None
+    if sites_file:
+        try:
+            sites = load_sites(sites_file)
+        except ValueError as e:
+            raise click.UsageError(f"Invalid --sites-file: {e}") from e
 
     if read_stdin:
         if not stdin_type:
@@ -91,7 +100,7 @@ def recon(username, domain, email, out, output_format, verbose, read_stdin, stdi
         for target in targets:
             kwargs = {stdin_type: target}
             report = Report()
-            _run_modules(report, **kwargs)
+            _run_modules(report, sites=sites, **kwargs)
             find_correlations(report, **kwargs)
             target_out = f"{out}_{_sanitize(target)}"
             _write_output(report, kwargs.get("username"), kwargs.get("domain"), kwargs.get("email"),
@@ -101,7 +110,7 @@ def recon(username, domain, email, out, output_format, verbose, read_stdin, stdi
         return
 
     report = Report()
-    _run_modules(report, username=username, domain=domain, email=email)
+    _run_modules(report, username=username, domain=domain, email=email, sites=sites)
     find_correlations(report, username=username, domain=domain, email=email)
     _write_output(report, username, domain, email, out, output_format)
     click.echo(f"Collected {len(report.findings)} findings. Output: {output_format} ({out}.*)")
