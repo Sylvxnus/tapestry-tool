@@ -7,7 +7,7 @@ import logging
 
 import httpx
 
-from ..config import USERNAME_CONCURRENCY, USERNAME_SITES, USERNAME_TIMEOUT
+from ..config import USERNAME_CONCURRENCY, USERNAME_TIMEOUT, load_sites
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +38,13 @@ async def check_site(client, sem, site, username, report):
         report.add("username", username, "platform", site["name"], confidence=0.8)
 
 
-async def run_async(username, report):
+async def run_async(username, report, sites=None):
+    sites = sites or load_sites()
     headers = {"User-Agent": "Mozilla/5.0 (osint-aggregator; educational use)"}
     sem = asyncio.Semaphore(USERNAME_CONCURRENCY)
     async with httpx.AsyncClient(headers=headers) as client:
-        await asyncio.gather(*(check_site(client, sem, s, username, report) for s in USERNAME_SITES))
+        await asyncio.gather(*(check_site(client, sem, s, username, report) for s in sites))
 
 
-def run(username, report):
-    asyncio.run(run_async(username, report))
+def run(username, report, sites=None):
+    asyncio.run(run_async(username, report, sites=sites))

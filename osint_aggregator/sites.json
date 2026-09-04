@@ -1,0 +1,17 @@
+[
+  {"name": "GitHub",     "url": "https://github.com/{}",                       "method": "status"},
+  {"name": "Docker Hub", "url": "https://hub.docker.com/v2/users/{}/",         "method": "status"},
+  {"name": "dev.to",     "url": "https://dev.to/api/users/by_username?url={}", "method": "status"},
+  {
+    "name": "Steam",
+    "url": "https://steamcommunity.com/id/{}",
+    "method": "message",
+    "not_found": "The specified profile could not be found."
+  },
+  {"name": "Keybase",   "url": "https://keybase.io/{}",                    "method": "status"},
+  {"name": "Chess.com", "url": "https://api.chess.com/pub/player/{}",      "method": "status"},
+  {"name": "Lichess",   "url": "https://lichess.org/api/user/{}",          "method": "status"},
+  {"name": "Codewars",  "url": "https://www.codewars.com/api/v1/users/{}", "method": "status"},
+  {"name": "Gravatar",  "url": "https://en.gravatar.com/{}.json",          "method": "status"},
+  {"name": "HackerOne", "url": "https://hackerone.com/{}",                 "method": "status"}
+]

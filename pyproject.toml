@@ -27,7 +27,7 @@ tapestry = "osint_aggregator.cli:recon"
 include = ["osint_aggregator*"]
 
 [tool.setuptools.package-data]
-osint_aggregator = ["templates/*.j2"]
+osint_aggregator = ["templates/*.j2", "sites.json"]
 
 [tool.ruff]
 line-length = 120
